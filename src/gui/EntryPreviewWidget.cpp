@@ -285,6 +285,7 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
     m_ui->entryAttributesEdit->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_ui->entryAttributesEdit->setFocusPolicy(Qt::NoFocus);
     m_ui->entryAttributesEdit->setSelectionMode(QAbstractItemView::NoSelection);
+
     const EntryAttributes* attributes = m_currentEntry->attributes();
     const QStringList customAttributes = attributes->customKeys();
     const bool hasAttributes = !customAttributes.isEmpty();
@@ -298,16 +299,16 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         QFont font;
         font.setBold(true);
         for (const QString& key : customAttributes) {
-            auto value = m_currentEntry->attributes()->value(key);
+            auto value = attributes->value(key);
             m_ui->entryAttributesEdit->setItem(i, 0, new QTableWidgetItem(key));
             m_ui->entryAttributesEdit->item(i, 0)->setFont(font);
-            if (m_currentEntry->attributes()->isProtected(key)) {
+            if (attributes->isProtected(key)) {
+                // only show the reveal button on protected attributes
                 auto button = new QToolButton();
                 button->setCheckable(true);
                 button->setChecked(false);
                 button->setIcon(icons()->onOffIcon("password-show", false));
                 m_ui->entryAttributesEdit->setCellWidget(i, 1, button);
-                m_ui->entryAttributesEdit->setItem(i, 2, new QTableWidgetItem(QString("\u25cf").repeated(6)));
                 connect(button, &QToolButton::clicked, [this, i, value](bool state) {
                     if (state) {
                         m_ui->entryAttributesEdit->item(i, 2)->setText(value);
@@ -317,6 +318,7 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
                     auto button = qobject_cast<QToolButton*>(m_ui->entryAttributesEdit->cellWidget(i, 1));
                     button->setIcon(icons()->onOffIcon("password-show", state));
                 });
+                m_ui->entryAttributesEdit->setItem(i, 2, new QTableWidgetItem(QString("\u25cf").repeated(6)));
             } else {
                 m_ui->entryAttributesEdit->setItem(i, 2, new QTableWidgetItem(value));
             }
