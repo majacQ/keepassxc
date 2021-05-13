@@ -650,7 +650,7 @@
             </spacer>
            </item>
            <item row="1" column="1">
-            <widget class="QTableWidget" name="entryAttributesEdit">
+            <widget class="QTableWidget" name="entryAttributesTable">
              <property name="focusPolicy">
               <enum>Qt::ClickFocus</enum>
              </property>

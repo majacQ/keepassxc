@@ -276,22 +276,22 @@ void EntryPreviewWidget::updateEntryGeneralTab()
 void EntryPreviewWidget::updateEntryAdvancedTab()
 {
     Q_ASSERT(m_currentEntry);
-    m_ui->entryAttributesEdit->clear();
-    m_ui->entryAttributesEdit->horizontalHeader()->hide();
-    m_ui->entryAttributesEdit->verticalHeader()->hide();
-    m_ui->entryAttributesEdit->setShowGrid(false);
-    m_ui->entryAttributesEdit->setStyleSheet("QTableView::item {padding: 5px;}");
-    m_ui->entryAttributesEdit->setFrameStyle(QFrame::NoFrame);
-    m_ui->entryAttributesEdit->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    m_ui->entryAttributesEdit->setFocusPolicy(Qt::NoFocus);
-    m_ui->entryAttributesEdit->setSelectionMode(QAbstractItemView::NoSelection);
+    m_ui->entryAttributesTable->clear();
+    m_ui->entryAttributesTable->horizontalHeader()->hide();
+    m_ui->entryAttributesTable->verticalHeader()->hide();
+    m_ui->entryAttributesTable->setShowGrid(false);
+    m_ui->entryAttributesTable->setStyleSheet("QTableView::item {padding: 5px;}");
+    m_ui->entryAttributesTable->setFrameStyle(QFrame::NoFrame);
+    m_ui->entryAttributesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_ui->entryAttributesTable->setFocusPolicy(Qt::NoFocus);
+    m_ui->entryAttributesTable->setSelectionMode(QAbstractItemView::NoSelection);
 
     const EntryAttributes* attributes = m_currentEntry->attributes();
     const QStringList customAttributes = attributes->customKeys();
     const bool hasAttributes = !customAttributes.isEmpty();
     const bool hasAttachments = !m_currentEntry->attachments()->isEmpty();
-    m_ui->entryAttributesEdit->setRowCount(customAttributes.size());
-    m_ui->entryAttributesEdit->setColumnCount(3);
+    m_ui->entryAttributesTable->setRowCount(customAttributes.size());
+    m_ui->entryAttributesTable->setColumnCount(3);
 
     setTabEnabled(m_ui->entryTabWidget, m_ui->entryAdvancedTab, hasAttributes || hasAttachments);
     if (hasAttributes) {
@@ -300,35 +300,35 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         font.setBold(true);
         for (const QString& key : customAttributes) {
             auto value = attributes->value(key);
-            m_ui->entryAttributesEdit->setItem(i, 0, new QTableWidgetItem(key));
-            m_ui->entryAttributesEdit->item(i, 0)->setFont(font);
+            m_ui->entryAttributesTable->setItem(i, 0, new QTableWidgetItem(key));
+            m_ui->entryAttributesTable->item(i, 0)->setFont(font);
             if (attributes->isProtected(key)) {
                 // only show the reveal button on protected attributes
                 auto button = new QToolButton();
                 button->setCheckable(true);
                 button->setChecked(false);
                 button->setIcon(icons()->onOffIcon("password-show", false));
-                m_ui->entryAttributesEdit->setCellWidget(i, 1, button);
+                m_ui->entryAttributesTable->setCellWidget(i, 1, button);
                 connect(button, &QToolButton::clicked, [this, i, value](bool state) {
                     if (state) {
-                        m_ui->entryAttributesEdit->item(i, 2)->setText(value);
+                        m_ui->entryAttributesTable->item(i, 2)->setText(value);
                     } else {
-                        m_ui->entryAttributesEdit->item(i, 2)->setText(QString("\u25cf").repeated(6));
+                        m_ui->entryAttributesTable->item(i, 2)->setText(QString("\u25cf").repeated(6));
                     }
-                    auto button = qobject_cast<QToolButton*>(m_ui->entryAttributesEdit->cellWidget(i, 1));
+                    auto button = qobject_cast<QToolButton*>(m_ui->entryAttributesTable->cellWidget(i, 1));
                     button->setIcon(icons()->onOffIcon("password-show", state));
                 });
-                m_ui->entryAttributesEdit->setItem(i, 2, new QTableWidgetItem(QString("\u25cf").repeated(6)));
+                m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(QString("\u25cf").repeated(6)));
             } else {
-                m_ui->entryAttributesEdit->setItem(i, 2, new QTableWidgetItem(value));
+                m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(value));
             }
             i += 1;
         }
     }
 
-    m_ui->entryAttributesEdit->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    m_ui->entryAttributesEdit->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    m_ui->entryAttributesEdit->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
     m_ui->entryAttachmentsWidget->setEntryAttachments(m_currentEntry->attachments());
 }
 
