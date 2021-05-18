@@ -332,9 +332,10 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         });
     }
 
-    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    m_ui->entryAttributesTable->resizeRowsToContents();
     m_ui->entryAttachmentsWidget->setEntryAttachments(m_currentEntry->attachments());
 }
 
