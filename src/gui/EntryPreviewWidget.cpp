@@ -19,6 +19,7 @@
 #include "EntryPreviewWidget.h"
 #include "ui_EntryPreviewWidget.h"
 
+#include "Clipboard.h"
 #include "Font.h"
 #include "entry/EntryAttachmentsModel.h"
 #include "gui/Icons.h"
@@ -324,6 +325,11 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
             }
             i += 1;
         }
+        connect(m_ui->entryAttributesTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
+            if (column == 2) {
+                clipboard()->setText(m_ui->entryAttributesTable->item(row, column)->text());
+            }
+        });
     }
 
     m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
