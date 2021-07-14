@@ -53,7 +53,12 @@ public slots:
     void calculateHealth();
     void emitEntryActivated(const QModelIndex& index);
     void customMenuRequested(QPoint);
+  <<<<<<< feature/delete-entry-from-reports
+    void editFromContextmenu();
+    void deleteEntry();
+  =======
     void deleteSelectedEntries();
+  >>>>>>> develop
 
 private:
     void addHealthRow(QSharedPointer<PasswordHealth>, Group*, Entry*, bool knownBad);
