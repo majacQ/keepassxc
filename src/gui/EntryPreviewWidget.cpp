@@ -21,10 +21,10 @@
 
 #include "Clipboard.h"
 #include "Font.h"
-#include "entry/EntryAttachmentsModel.h"
 #include "gui/Icons.h"
 #if defined(WITH_XC_KEESHARE)
 #include "keeshare/KeeShare.h"
+#include "keeshare/KeeShareSettings.h"
 #endif
 
 namespace
@@ -278,6 +278,7 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
 {
     Q_ASSERT(m_currentEntry);
     m_ui->entryAttributesTable->clear();
+  <<<<<<< feature/toggle-view-attributes
     m_ui->entryAttributesTable->horizontalHeader()->hide();
     m_ui->entryAttributesTable->verticalHeader()->hide();
     m_ui->entryAttributesTable->setShowGrid(false);
@@ -286,6 +287,8 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
     m_ui->entryAttributesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_ui->entryAttributesTable->setFocusPolicy(Qt::NoFocus);
     m_ui->entryAttributesTable->setSelectionMode(QAbstractItemView::NoSelection);
+  =======
+  >>>>>>> develop
 
     const EntryAttributes* attributes = m_currentEntry->attributes();
     const QStringList customAttributes = attributes->customKeys();
@@ -300,15 +303,21 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         QFont font;
         font.setBold(true);
         for (const QString& key : customAttributes) {
+  <<<<<<< feature/toggle-view-attributes
             auto value = attributes->value(key);
             m_ui->entryAttributesTable->setItem(i, 0, new QTableWidgetItem(key));
             m_ui->entryAttributesTable->item(i, 0)->setFont(font);
+  =======
+            m_ui->entryAttributesTable->setItem(i, 0, new QTableWidgetItem(key));
+
+  >>>>>>> develop
             if (attributes->isProtected(key)) {
                 // only show the reveal button on protected attributes
                 auto button = new QToolButton();
                 button->setCheckable(true);
                 button->setChecked(false);
                 button->setIcon(icons()->onOffIcon("password-show", false));
+  <<<<<<< feature/toggle-view-attributes
                 m_ui->entryAttributesTable->setCellWidget(i, 1, button);
                 connect(button, &QToolButton::clicked, [this, i, value](bool state) {
                     if (state) {
@@ -324,6 +333,36 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
                 m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(value));
             }
             i += 1;
+  =======
+                button->setProperty("value", attributes->value(key));
+                button->setProperty("row", i);
+                m_ui->entryAttributesTable->setCellWidget(i, 1, button);
+                m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(QString("\u25cf").repeated(6)));
+
+                connect(button, &QToolButton::clicked, this, [this](bool state) {
+                    auto btn = qobject_cast<QToolButton*>(sender());
+                    btn->setIcon(icons()->onOffIcon("password-show", state));
+                    auto row = btn->property("row").toInt();
+                    if (state) {
+                        m_ui->entryAttributesTable->item(row, 2)->setText(btn->property("value").toString());
+                    } else {
+                        m_ui->entryAttributesTable->item(row, 2)->setText(QString("\u25cf").repeated(6));
+                    }
+                    // Maintain button height while showing contents of cell
+                    auto size = btn->size();
+                    m_ui->entryAttributesTable->resizeRowToContents(row);
+                    btn->setFixedSize(size);
+                });
+            } else {
+                m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(attributes->value(key)));
+            }
+
+            m_ui->entryAttributesTable->item(i, 0)->setFont(font);
+            m_ui->entryAttributesTable->item(i, 0)->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
+            m_ui->entryAttributesTable->item(i, 2)->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+            ++i;
+  >>>>>>> develop
         }
         connect(m_ui->entryAttributesTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
             if (column == 2) {
@@ -332,9 +371,14 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         });
     }
 
+  <<<<<<< feature/toggle-view-attributes
     m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+  =======
+    m_ui->entryAttributesTable->horizontalHeader()->setStretchLastSection(true);
+    m_ui->entryAttributesTable->resizeColumnsToContents();
+  >>>>>>> develop
     m_ui->entryAttributesTable->resizeRowsToContents();
     m_ui->entryAttachmentsWidget->setEntryAttachments(m_currentEntry->attachments());
 }

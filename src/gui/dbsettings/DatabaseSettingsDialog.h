@@ -22,8 +22,6 @@
 #include "gui/DialogyWidget.h"
 
 #include <QPointer>
-#include <QScopedPointer>
-#include <QSharedPointer>
 
 class Database;
 class DatabaseSettingsWidgetGeneral;
@@ -73,7 +71,6 @@ private slots:
     void save();
     void reject();
     void pageChanged();
-    void toggleAdvancedMode(bool advanced);
 
 private:
     enum Page

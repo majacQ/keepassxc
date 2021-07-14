@@ -20,16 +20,12 @@
 #define KEEPASSX_GROUP_H
 
 #include <QImage>
-#include <QPixmap>
-#include <QPointer>
 
 #include "core/CustomData.h"
 #include "core/Database.h"
 #include "core/Entry.h"
-#include "core/Global.h"
-#include "core/TimeInfo.h"
 
-class Group : public QObject
+class Group : public ModifiableObject
 {
     Q_OBJECT
 
@@ -184,7 +180,6 @@ signals:
     void groupRemoved();
     void aboutToMove(Group* group, Group* toGroup, int index);
     void groupMoved();
-    void groupModified();
     void groupNonDataChange();
     void entryAboutToAdd(Entry* entry);
     void entryAdded(Entry* entry);

@@ -18,38 +18,24 @@
 
 #include "DatabaseWidget.h"
 
-#include <QAction>
 #include <QApplication>
+#include <QBoxLayout>
 #include <QCheckBox>
 #include <QDesktopServices>
-#include <QFile>
-#include <QHBoxLayout>
-#include <QHeaderView>
 #include <QHostInfo>
 #include <QKeyEvent>
-#include <QLabel>
-#include <QLineEdit>
 #include <QProcess>
 #include <QSplitter>
 #include <QTextEdit>
 
 #include "autotype/AutoType.h"
-#include "core/Config.h"
-#include "core/Database.h"
 #include "core/EntrySearcher.h"
-#include "core/FileWatcher.h"
-#include "core/Group.h"
 #include "core/Merger.h"
-#include "core/Metadata.h"
-#include "core/Resources.h"
-#include "core/Tools.h"
-#include "format/KeePass2Reader.h"
 #include "gui/Clipboard.h"
 #include "gui/CloneDialog.h"
-#include "gui/DatabaseOpenDialog.h"
-#include "gui/DatabaseOpenWidget.h"
 #include "gui/EntryPreviewWidget.h"
 #include "gui/FileDialog.h"
+#include "gui/GuiTools.h"
 #include "gui/KeePass1OpenWidget.h"
 #include "gui/MainWindow.h"
 #include "gui/MessageBox.h"
@@ -58,20 +44,14 @@
 #include "gui/TotpExportSettingsDialog.h"
 #include "gui/TotpSetupDialog.h"
 #include "gui/dbsettings/DatabaseSettingsDialog.h"
-#include "gui/entry/EditEntryWidget.h"
 #include "gui/entry/EntryView.h"
 #include "gui/group/EditGroupWidget.h"
 #include "gui/group/GroupView.h"
 #include "gui/reports/ReportsDialog.h"
 #include "keeshare/KeeShare.h"
-#include "touchid/TouchID.h"
 
 #ifdef WITH_XC_NETWORKING
 #include "gui/IconDownloaderDialog.h"
-#endif
-
-#ifdef Q_OS_LINUX
-#include <sys/vfs.h>
 #endif
 
 #ifdef WITH_XC_SSHAGENT
@@ -99,6 +79,7 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
     , m_opVaultOpenWidget(new OpVaultOpenWidget(this))
     , m_groupView(new GroupView(m_db.data(), m_mainSplitter))
     , m_saveAttempts(0)
+    , m_entrySearcher(new EntrySearcher(false))
 {
     Q_ASSERT(m_db);
 
@@ -211,7 +192,6 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
 
     m_blockAutoSave = false;
 
-    m_EntrySearcher = new EntrySearcher(false);
     m_searchLimitGroup = config()->get(Config::SearchLimitGroup).toBool();
 
 #ifdef WITH_XC_KEESHARE
@@ -234,7 +214,13 @@ DatabaseWidget::DatabaseWidget(const QString& filePath, QWidget* parent)
 
 DatabaseWidget::~DatabaseWidget()
 {
-    delete m_EntrySearcher;
+    // Trigger any Database deletion related signals manually by
+    // explicitly clearing the Database pointer, instead of leaving it to ~QSharedPointer.
+    // QSharedPointer may behave differently depending on whether it is cleared by the `clear` method
+    // or by its destructor. In the latter case, the ref counter may not be correctly maintained
+    // if a copy of the QSharedPointer is created in any slots activated by the Database destructor.
+    // More details: https://github.com/keepassxreboot/keepassxc/issues/6393.
+    m_db.clear();
 }
 
 QSharedPointer<Database> DatabaseWidget::database() const
@@ -481,57 +467,11 @@ void DatabaseWidget::deleteEntries(QList<Entry*> selectedEntries, bool confirm)
     bool permanent = (recycleBin && recycleBin->findEntryByUuid(selectedEntries.first()->uuid()))
                      || !m_db->metadata()->recycleBinEnabled();
 
-    if (confirm && !confirmDeleteEntries(selectedEntries, permanent)) {
+    if (confirm && !GuiTools::confirmDeleteEntries(this, selectedEntries, permanent)) {
         return;
     }
 
-    // Find references to selected entries and prompt for direction if necessary
-    auto it = selectedEntries.begin();
-    while (confirm && it != selectedEntries.end()) {
-        auto references = m_db->rootGroup()->referencesRecursive(*it);
-        if (!references.isEmpty()) {
-            // Ignore references that are selected for deletion
-            for (auto* entry : selectedEntries) {
-                references.removeAll(entry);
-            }
-
-            if (!references.isEmpty()) {
-                // Prompt for reference handling
-                auto result = MessageBox::question(
-                    this,
-                    tr("Replace references to entry?"),
-                    tr("Entry \"%1\" has %2 reference(s). "
-                       "Do you want to overwrite references with values, skip this entry, or delete anyway?",
-                       "",
-                       references.size())
-                        .arg((*it)->title().toHtmlEscaped())
-                        .arg(references.size()),
-                    MessageBox::Overwrite | MessageBox::Skip | MessageBox::Delete,
-                    MessageBox::Overwrite);
-
-                if (result == MessageBox::Overwrite) {
-                    for (auto* entry : references) {
-                        entry->replaceReferencesWithValues(*it);
-                    }
-                } else if (result == MessageBox::Skip) {
-                    it = selectedEntries.erase(it);
-                    continue;
-                }
-            }
-        }
-
-        it++;
-    }
-
-    if (permanent) {
-        for (auto* entry : asConst(selectedEntries)) {
-            delete entry;
-        }
-    } else {
-        for (auto* entry : asConst(selectedEntries)) {
-            m_db->recycleEntry(entry);
-        }
-    }
+    GuiTools::deleteEntriesResolveReferences(this, selectedEntries, permanent);
 
     refreshSearch();
 
@@ -541,49 +481,6 @@ void DatabaseWidget::deleteEntries(QList<Entry*> selectedEntries, bool confirm)
         m_previewView->setEntry(currentEntry);
     } else {
         m_previewView->setGroup(groupView()->currentGroup());
-    }
-}
-
-bool DatabaseWidget::confirmDeleteEntries(QList<Entry*> entries, bool permanent)
-{
-    if (entries.isEmpty()) {
-        return false;
-    }
-
-    if (permanent) {
-        QString prompt;
-        if (entries.size() == 1) {
-            prompt = tr("Do you really want to delete the entry \"%1\" for good?")
-                         .arg(entries.first()->title().toHtmlEscaped());
-        } else {
-            prompt = tr("Do you really want to delete %n entry(s) for good?", "", entries.size());
-        }
-
-        auto answer = MessageBox::question(this,
-                                           tr("Delete entry(s)?", "", entries.size()),
-                                           prompt,
-                                           MessageBox::Delete | MessageBox::Cancel,
-                                           MessageBox::Cancel);
-
-        return answer == MessageBox::Delete;
-    } else if (config()->get(Config::Security_NoConfirmMoveEntryToRecycleBin).toBool()) {
-        return true;
-    } else {
-        QString prompt;
-        if (entries.size() == 1) {
-            prompt = tr("Do you really want to move entry \"%1\" to the recycle bin?")
-                         .arg(entries.first()->title().toHtmlEscaped());
-        } else {
-            prompt = tr("Do you really want to move %n entry(s) to the recycle bin?", "", entries.size());
-        }
-
-        auto answer = MessageBox::question(this,
-                                           tr("Move entry(s) to recycle bin?", "", entries.size()),
-                                           prompt,
-                                           MessageBox::Move | MessageBox::Cancel,
-                                           MessageBox::Cancel);
-
-        return answer == MessageBox::Move;
     }
 }
 
@@ -1061,10 +958,10 @@ void DatabaseWidget::connectDatabaseSignals()
             SIGNAL(filePathChanged(QString, QString)),
 
             SIGNAL(databaseFilePathChanged(QString, QString)));
-    connect(m_db.data(), SIGNAL(databaseModified()), SIGNAL(databaseModified()));
-    connect(m_db.data(), SIGNAL(databaseModified()), SLOT(onDatabaseModified()));
-    connect(m_db.data(), SIGNAL(databaseSaved()), SIGNAL(databaseSaved()));
-    connect(m_db.data(), SIGNAL(databaseFileChanged()), this, SLOT(reloadDatabaseFile()));
+    connect(m_db.data(), &Database::modified, this, &DatabaseWidget::databaseModified);
+    connect(m_db.data(), &Database::modified, this, &DatabaseWidget::onDatabaseModified);
+    connect(m_db.data(), &Database::databaseSaved, this, &DatabaseWidget::databaseSaved);
+    connect(m_db.data(), &Database::databaseFileChanged, this, &DatabaseWidget::reloadDatabaseFile);
 }
 
 void DatabaseWidget::loadDatabase(bool accepted)
@@ -1366,7 +1263,7 @@ void DatabaseWidget::search(const QString& searchtext)
 
     Group* searchGroup = m_searchLimitGroup ? currentGroup() : m_db->rootGroup();
 
-    QList<Entry*> searchResult = m_EntrySearcher->search(searchtext, searchGroup);
+    QList<Entry*> searchResult = m_entrySearcher->search(searchtext, searchGroup);
 
     m_entryView->displaySearch(searchResult);
     m_lastSearchText = searchtext;
@@ -1388,7 +1285,7 @@ void DatabaseWidget::search(const QString& searchtext)
 
 void DatabaseWidget::setSearchCaseSensitive(bool state)
 {
-    m_EntrySearcher->setCaseSensitive(state);
+    m_entrySearcher->setCaseSensitive(state);
     refreshSearch();
 }
 

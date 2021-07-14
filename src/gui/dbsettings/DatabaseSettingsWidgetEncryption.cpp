@@ -19,15 +19,13 @@
 #include "ui_DatabaseSettingsWidgetEncryption.h"
 
 #include "core/AsyncTask.h"
+#include "core/Config.h"
 #include "core/Database.h"
 #include "core/Global.h"
 #include "core/Metadata.h"
 #include "crypto/kdf/Argon2Kdf.h"
 #include "format/KeePass2.h"
 #include "gui/MessageBox.h"
-
-#include <QApplication>
-#include <QPushButton>
 
 const char* DatabaseSettingsWidgetEncryption::CD_DECRYPTION_TIME_PREFERENCE_KEY = "KPXC_DECRYPTION_TIME_PREFERENCE";
 
@@ -36,7 +34,9 @@ DatabaseSettingsWidgetEncryption::DatabaseSettingsWidgetEncryption(QWidget* pare
     , m_ui(new Ui::DatabaseSettingsWidgetEncryption())
 {
     m_ui->setupUi(this);
+    m_ui->advancedSettingsToggle->setChecked(config()->get(Config::GUI_AdvancedSettings).toBool());
 
+    connect(m_ui->advancedSettingsToggle, SIGNAL(toggled(bool)), SLOT(setAdvancedMode(bool)));
     connect(m_ui->transformBenchmarkButton, SIGNAL(clicked()), SLOT(benchmarkTransformRounds()));
     connect(m_ui->kdfComboBox, SIGNAL(currentIndexChanged(int)), SLOT(changeKdf(int)));
 
@@ -84,6 +84,8 @@ void DatabaseSettingsWidgetEncryption::initialize()
     if (!m_db) {
         return;
     }
+
+    setAdvancedMode(m_ui->advancedSettingsToggle->isChecked());
 
     bool isDirty = false;
 
@@ -371,11 +373,13 @@ void DatabaseSettingsWidgetEncryption::setAdvancedMode(bool advanced)
 
     if (advanced) {
         loadKdfParameters();
-        m_ui->stackedWidget->setCurrentIndex(1);
     } else {
         m_ui->compatibilitySelection->setCurrentIndex(m_db->kdf()->uuid() == KeePass2::KDF_AES_KDBX3 ? KDBX3 : KDBX4);
-        m_ui->stackedWidget->setCurrentIndex(0);
     }
+
+    m_ui->advancedSettings->setVisible(advanced);
+    m_ui->decryptionTimeSlider->setEnabled(!advanced);
+    config()->set(Config::GUI_AdvancedSettings, advanced);
 }
 
 void DatabaseSettingsWidgetEncryption::updateDecryptionTime(int value)

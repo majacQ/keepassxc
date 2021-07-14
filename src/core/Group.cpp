@@ -19,10 +19,8 @@
 #include "Group.h"
 #include "config-keepassx.h"
 
-#include "core/Clock.h"
 #include "core/Config.h"
 #include "core/DatabaseIcons.h"
-#include "core/Global.h"
 #include "core/Metadata.h"
 #include "core/Tools.h"
 
@@ -30,7 +28,7 @@
 #include "keeshare/KeeShare.h"
 #endif
 
-#include <QtConcurrent>
+#include <QtConcurrentFilter>
 
 const int Group::DefaultIconNumber = 48;
 const int Group::RecycleBinIconNumber = 43;
@@ -46,9 +44,9 @@ Group::Group()
     m_data.searchingEnabled = Inherit;
     m_data.mergeMode = Default;
 
-    connect(m_customData, SIGNAL(customDataModified()), this, SIGNAL(groupModified()));
-    connect(this, SIGNAL(groupModified()), SLOT(updateTimeinfo()));
-    connect(this, SIGNAL(groupNonDataChange()), SLOT(updateTimeinfo()));
+    connect(m_customData, &CustomData::modified, this, &Group::modified);
+    connect(this, &Group::modified, this, &Group::updateTimeinfo);
+    connect(this, &Group::groupNonDataChange, this, &Group::updateTimeinfo);
 }
 
 Group::~Group()
@@ -80,7 +78,7 @@ template <class P, class V> inline bool Group::set(P& property, const V& value)
 {
     if (property != value) {
         property = value;
-        emit groupModified();
+        emitModified();
         return true;
     } else {
         return false;
@@ -333,7 +331,7 @@ void Group::setIcon(int iconNumber)
     if (iconNumber >= 0 && (m_data.iconNumber != iconNumber || !m_data.customIcon.isNull())) {
         m_data.iconNumber = iconNumber;
         m_data.customIcon = QUuid();
-        emit groupModified();
+        emitModified();
         emit groupDataChanged(this);
     }
 }
@@ -343,7 +341,7 @@ void Group::setIcon(const QUuid& uuid)
     if (!uuid.isNull() && m_data.customIcon != uuid) {
         m_data.customIcon = uuid;
         m_data.iconNumber = 0;
-        emit groupModified();
+        emitModified();
         emit groupDataChanged(this);
     }
 }
@@ -385,7 +383,7 @@ void Group::setExpires(bool value)
 {
     if (m_data.timeInfo.expires() != value) {
         m_data.timeInfo.setExpires(value);
-        emit groupModified();
+        emitModified();
     }
 }
 
@@ -393,7 +391,7 @@ void Group::setExpiryTime(const QDateTime& dateTime)
 {
     if (m_data.timeInfo.expiryTime() != dateTime) {
         m_data.timeInfo.setExpiryTime(dateTime);
-        emit groupModified();
+        emitModified();
     }
 }
 
@@ -465,7 +463,7 @@ void Group::setParent(Group* parent, int index)
         m_data.timeInfo.setLocationChanged(Clock::currentDateTimeUtc());
     }
 
-    emit groupModified();
+    emitModified();
 
     if (!moveWithinDatabase) {
         emit groupAdded();
@@ -927,12 +925,12 @@ void Group::addEntry(Entry* entry)
     emit entryAboutToAdd(entry);
 
     m_entries << entry;
-    connect(entry, SIGNAL(entryDataChanged(Entry*)), SIGNAL(entryDataChanged(Entry*)));
+    connect(entry, &Entry::entryDataChanged, this, &Group::entryDataChanged);
     if (m_db) {
-        connect(entry, SIGNAL(entryModified()), m_db, SLOT(markAsModified()));
+        connect(entry, &Entry::modified, m_db, &Database::markAsModified);
     }
 
-    emit groupModified();
+    emitModified();
     emit entryAdded(entry);
 }
 
@@ -949,7 +947,7 @@ void Group::removeEntry(Entry* entry)
         entry->disconnect(m_db);
     }
     m_entries.removeAll(entry);
-    emit groupModified();
+    emitModified();
     emit entryRemoved(entry);
 }
 
@@ -990,21 +988,21 @@ void Group::connectDatabaseSignalsRecursive(Database* db)
             entry->disconnect(m_db);
         }
         if (db) {
-            connect(entry, SIGNAL(entryModified()), db, SLOT(markAsModified()));
+            connect(entry, &Entry::modified, db, &Database::markAsModified);
         }
     }
 
     if (db) {
         // clang-format off
-        connect(this, SIGNAL(groupDataChanged(Group*)), db, SIGNAL(groupDataChanged(Group*)));
-        connect(this, SIGNAL(groupAboutToRemove(Group*)), db, SIGNAL(groupAboutToRemove(Group*)));
-        connect(this, SIGNAL(groupRemoved()), db, SIGNAL(groupRemoved()));
-        connect(this, SIGNAL(groupAboutToAdd(Group*, int)), db, SIGNAL(groupAboutToAdd(Group*,int)));
-        connect(this, SIGNAL(groupAdded()), db, SIGNAL(groupAdded()));
-        connect(this, SIGNAL(aboutToMove(Group*,Group*,int)), db, SIGNAL(groupAboutToMove(Group*,Group*,int)));
-        connect(this, SIGNAL(groupMoved()), db, SIGNAL(groupMoved()));
-        connect(this, SIGNAL(groupModified()), db, SLOT(markAsModified()));
-        connect(this, SIGNAL(groupNonDataChange()), db, SLOT(markNonDataChange()));
+        connect(this, &Group::groupDataChanged, db, &Database::groupDataChanged);
+        connect(this, &Group::groupAboutToRemove, db, &Database::groupAboutToRemove);
+        connect(this, &Group::groupRemoved, db, &Database::groupRemoved);
+        connect(this, &Group::groupAboutToAdd, db, &Database::groupAboutToAdd);
+        connect(this, &Group::groupAdded, db, &Database::groupAdded);
+        connect(this, &Group::aboutToMove, db, &Database::groupAboutToMove);
+        connect(this, &Group::groupMoved, db, &Database::groupMoved);
+        connect(this, &Group::groupNonDataChange, db, &Database::markNonDataChange);
+        connect(this, &Group::modified, db, &Database::markAsModified);
         // clang-format on
     }
 
@@ -1020,7 +1018,7 @@ void Group::cleanupParent()
     if (m_parent) {
         emit groupAboutToRemove(this);
         m_parent->m_children.removeAll(this);
-        emit groupModified();
+        emitModified();
         emit groupRemoved();
     }
 }
@@ -1189,7 +1187,7 @@ void Group::sortChildrenRecursively(bool reverse)
         child->sortChildrenRecursively(reverse);
     }
 
-    emit groupModified();
+    emitModified();
 }
 
 bool Group::GroupData::operator==(const Group::GroupData& other) const

@@ -18,20 +18,15 @@
 #include "Item.h"
 
 #include "fdosecrets/FdoSecretsPlugin.h"
-#include "fdosecrets/dbus/DBusMgr.h"
 #include "fdosecrets/objects/Collection.h"
 #include "fdosecrets/objects/Prompt.h"
 #include "fdosecrets/objects/Service.h"
 #include "fdosecrets/objects/Session.h"
 
-#include "core/Entry.h"
 #include "core/EntryAttributes.h"
 #include "core/Group.h"
-#include "core/Metadata.h"
 
 #include <QMimeDatabase>
-#include <QRegularExpression>
-#include <QScopedPointer>
 #include <QSet>
 #include <QTextCodec>
 
@@ -63,7 +58,7 @@ namespace FdoSecrets
         : DBusObject(parent)
         , m_backend(backend)
     {
-        connect(m_backend.data(), &Entry::entryModified, this, &Item::itemChanged);
+        connect(m_backend, &Entry::modified, this, &Item::itemChanged);
     }
 
     DBusResult Item::locked(const DBusClientPtr& client, bool& locked) const

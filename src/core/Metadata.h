@@ -19,13 +19,8 @@
 #define KEEPASSX_METADATA_H
 
 #include <QDateTime>
-#include <QHash>
 #include <QIcon>
-#include <QImage>
-#include <QPixmap>
-#include <QPixmapCache>
 #include <QPointer>
-#include <QSize>
 #include <QUuid>
 
 #include "core/CustomData.h"
@@ -34,7 +29,7 @@
 class Database;
 class Group;
 
-class Metadata : public QObject
+class Metadata : public ModifiableObject
 {
     Q_OBJECT
 
@@ -148,9 +143,6 @@ public:
      * - Settings changed date
      */
     void copyAttributesFrom(const Metadata* other);
-
-signals:
-    void metadataModified();
 
 private:
     template <class P, class V> bool set(P& property, const V& value);
