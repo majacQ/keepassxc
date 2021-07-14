@@ -36,7 +36,6 @@ set(keepassx_SOURCES
         core/Base32.cpp
         core/Bootstrap.cpp
         core/Clock.cpp
-        core/Compare.cpp
         core/Config.cpp
         core/CsvParser.cpp
         core/CustomData.cpp
@@ -52,6 +51,7 @@ set(keepassx_SOURCES
         core/InactivityTimer.cpp
         core/Merger.cpp
         core/Metadata.cpp
+        core/ModifiableObject.cpp
         core/PasswordGenerator.cpp
         core/PasswordHealth.cpp
         core/PassphraseGenerator.cpp
@@ -113,6 +113,7 @@ set(keepassx_SOURCES
         gui/EditWidgetProperties.cpp
         gui/FileDialog.cpp
         gui/Font.cpp
+        gui/GuiTools.cpp
         gui/IconModels.cpp
         gui/KeePass1OpenWidget.cpp
         gui/KMessageWidget.cpp

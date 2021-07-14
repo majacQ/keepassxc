@@ -16,10 +16,7 @@
  */
 
 #include "ShareObserver.h"
-#include "core/Config.h"
-#include "core/Database.h"
 #include "core/FileWatcher.h"
-#include "core/Global.h"
 #include "core/Group.h"
 #include "keeshare/KeeShare.h"
 #include "keeshare/ShareExport.h"
@@ -43,14 +40,14 @@ ShareObserver::ShareObserver(QSharedPointer<Database> db, QObject* parent)
     : QObject(parent)
     , m_db(std::move(db))
 {
-    connect(KeeShare::instance(), SIGNAL(activeChanged()), SLOT(handleDatabaseChanged()));
+    connect(KeeShare::instance(), &KeeShare::activeChanged, this, &ShareObserver::handleDatabaseChanged);
 
-    connect(m_db.data(), SIGNAL(groupDataChanged(Group*)), SLOT(handleDatabaseChanged()));
-    connect(m_db.data(), SIGNAL(groupAdded()), SLOT(handleDatabaseChanged()));
-    connect(m_db.data(), SIGNAL(groupRemoved()), SLOT(handleDatabaseChanged()));
+    connect(m_db.data(), &Database::groupDataChanged, this, &ShareObserver::handleDatabaseChanged);
+    connect(m_db.data(), &Database::groupAdded, this, &ShareObserver::handleDatabaseChanged);
+    connect(m_db.data(), &Database::groupRemoved, this, &ShareObserver::handleDatabaseChanged);
 
-    connect(m_db.data(), SIGNAL(databaseModified()), SLOT(handleDatabaseChanged()));
-    connect(m_db.data(), SIGNAL(databaseSaved()), SLOT(handleDatabaseSaved()));
+    connect(m_db.data(), &Database::modified, this, &ShareObserver::handleDatabaseChanged);
+    connect(m_db.data(), &Database::databaseSaved, this, &ShareObserver::handleDatabaseSaved);
 
     handleDatabaseChanged();
 }

@@ -17,9 +17,13 @@
  */
 
 #include "BrowserEntryConfig.h"
+
 #include "core/Entry.h"
-#include "core/EntryAttributes.h"
-#include <QtCore>
+#include "core/Tools.h"
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QVariant>
 
 static const char KEEPASSXCBROWSER_NAME[] = "KeePassXC-Browser Settings";
 
@@ -101,7 +105,7 @@ bool BrowserEntryConfig::load(const Entry* entry)
 
 void BrowserEntryConfig::save(Entry* entry)
 {
-    QVariantMap v = qo2qv(this);
+    QVariantMap v = Tools::qo2qvm(this);
     QJsonObject o = QJsonObject::fromVariantMap(v);
     QByteArray json = QJsonDocument(o).toJson(QJsonDocument::Compact);
     entry->customData()->set(KEEPASSXCBROWSER_NAME, json);

@@ -16,25 +16,23 @@
  */
 
 #include "Metadata.h"
-#include <QApplication>
-#include <QtCore/QCryptographicHash>
 
-#include "core/Clock.h"
 #include "core/DatabaseIcons.h"
-#include "core/Entry.h"
 #include "core/Group.h"
-#include "core/Tools.h"
+
+#include <QApplication>
+#include <QCryptographicHash>
 
 const int Metadata::DefaultHistoryMaxItems = 10;
 const int Metadata::DefaultHistoryMaxSize = 6 * 1024 * 1024;
 
 Metadata::Metadata(QObject* parent)
-    : QObject(parent)
+    : ModifiableObject(parent)
     , m_customData(new CustomData(this))
     , m_updateDatetime(true)
 {
     init();
-    connect(m_customData, SIGNAL(customDataModified()), SIGNAL(metadataModified()));
+    connect(m_customData, &CustomData::modified, this, &Metadata::modified);
 }
 
 void Metadata::init()
@@ -76,7 +74,7 @@ template <class P, class V> bool Metadata::set(P& property, const V& value)
 {
     if (property != value) {
         property = value;
-        emit metadataModified();
+        emitModified();
         return true;
     } else {
         return false;
@@ -90,7 +88,7 @@ template <class P, class V> bool Metadata::set(P& property, const V& value, QDat
         if (m_updateDatetime) {
             dateTime = Clock::currentDateTimeUtc();
         }
-        emit metadataModified();
+        emitModified();
         return true;
     } else {
         return false;
@@ -386,7 +384,7 @@ void Metadata::addCustomIcon(const QUuid& uuid, const QImage& image)
         m_customIcons.insert(uuid, QIcon());
     }
 
-    emit metadataModified();
+    emitModified();
 }
 
 void Metadata::removeCustomIcon(const QUuid& uuid)
@@ -404,7 +402,7 @@ void Metadata::removeCustomIcon(const QUuid& uuid)
     m_customIconsRaw.remove(uuid);
     m_customIconsOrder.removeAll(uuid);
     Q_ASSERT(m_customIconsRaw.count() == m_customIconsOrder.count());
-    emit metadataModified();
+    emitModified();
 }
 
 QUuid Metadata::findCustomIcon(const QImage& candidate)

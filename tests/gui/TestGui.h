@@ -22,12 +22,6 @@
 #include "gui/MainWindow.h"
 #include "util/TemporaryFile.h"
 
-#include <QAbstractItemModel>
-#include <QObject>
-#include <QPointer>
-#include <QScopedPointer>
-#include <QSharedPointer>
-
 class Database;
 class DatabaseTabWidget;
 class DatabaseWidget;
@@ -72,7 +66,7 @@ private slots:
     void testTrayRestoreHide();
 
 private:
-    int addCannedEntries();
+    void addCannedEntries();
     void checkDatabase(QString dbFileName = "");
     void triggerAction(const QString& name);
     void dragAndDropGroup(const QModelIndex& sourceIndex,

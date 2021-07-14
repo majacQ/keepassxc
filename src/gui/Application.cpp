@@ -19,11 +19,7 @@
 
 #include "Application.h"
 
-#include "autotype/AutoType.h"
 #include "core/Bootstrap.h"
-#include "core/Config.h"
-#include "core/Global.h"
-#include "gui/Icons.h"
 #include "gui/MainWindow.h"
 #include "gui/MessageBox.h"
 #include "gui/osutils/OSUtils.h"
@@ -32,10 +28,11 @@
 
 #include <QFileInfo>
 #include <QFileOpenEvent>
+#include <QLocalSocket>
 #include <QLockFile>
+#include <QPixmapCache>
 #include <QSocketNotifier>
 #include <QStandardPaths>
-#include <QtNetwork/QLocalSocket>
 
 #if defined(Q_OS_UNIX)
 #include <signal.h>
@@ -256,7 +253,7 @@ void Application::handleUnixSignal(int sig)
     case SIGINT:
     case SIGTERM: {
         char buf = 0;
-        Q_UNUSED(::write(unixSignalSocket[0], &buf, sizeof(buf)));
+        Q_UNUSED(!::write(unixSignalSocket[0], &buf, sizeof(buf)));
         return;
     }
     case SIGHUP:
@@ -268,7 +265,7 @@ void Application::quitBySignal()
 {
     m_unixSignalNotifier->setEnabled(false);
     char buf;
-    Q_UNUSED(::read(unixSignalSocket[1], &buf, sizeof(buf)));
+    Q_UNUSED(!::read(unixSignalSocket[1], &buf, sizeof(buf)));
     emit quitSignalReceived();
 }
 #endif

@@ -17,21 +17,15 @@
 
 #include "Collection.h"
 
-#include "fdosecrets/FdoSecretsPlugin.h"
 #include "fdosecrets/FdoSecretsSettings.h"
-#include "fdosecrets/dbus/DBusMgr.h"
 #include "fdosecrets/objects/Item.h"
 #include "fdosecrets/objects/Prompt.h"
 #include "fdosecrets/objects/Service.h"
-#include "fdosecrets/objects/Session.h"
 
-#include "core/Config.h"
 #include "core/Tools.h"
-#include "gui/DatabaseTabWidget.h"
 #include "gui/DatabaseWidget.h"
 
 #include <QFileInfo>
-#include <QRegularExpression>
 
 namespace FdoSecrets
 {
@@ -475,7 +469,7 @@ namespace FdoSecrets
             }
         });
         // Another possibility is the group being moved to recycle bin.
-        connect(m_exposedGroup.data(), &Group::groupModified, this, [this]() {
+        connect(m_exposedGroup.data(), &Group::modified, this, [this]() {
             if (inRecycleBin(m_exposedGroup->parentGroup())) {
                 // reset the exposed group to none
                 FdoSecrets::settings()->setExposedGroup(m_backend->database().data(), {});
@@ -483,7 +477,7 @@ namespace FdoSecrets
         });
 
         // Monitor exposed group settings
-        connect(m_backend->database()->metadata()->customData(), &CustomData::customDataModified, this, [this]() {
+        connect(m_backend->database()->metadata()->customData(), &CustomData::modified, this, [this]() {
             if (!m_exposedGroup || backendLocked()) {
                 return;
             }
@@ -500,8 +494,8 @@ namespace FdoSecrets
             onEntryAdded(entry, false);
         }
 
-        // Do not connect to databaseModified signal because we only want signals for the subset under m_exposedGroup
-        connect(m_backend->database()->metadata(), &Metadata::metadataModified, this, &Collection::collectionChanged);
+        // Do not connect to Database::modified signal because we only want signals for the subset under m_exposedGroup
+        connect(m_backend->database()->metadata(), &Metadata::modified, this, &Collection::collectionChanged);
         connectGroupSignalRecursive(m_exposedGroup);
     }
 
@@ -556,7 +550,7 @@ namespace FdoSecrets
             return;
         }
 
-        connect(group, &Group::groupModified, this, &Collection::collectionChanged);
+        connect(group, &Group::modified, this, &Collection::collectionChanged);
         connect(group, &Group::entryAdded, this, [this](Entry* entry) { onEntryAdded(entry, true); });
 
         const auto children = group->children();

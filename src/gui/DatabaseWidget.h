@@ -20,9 +20,7 @@
 #define KEEPASSX_DATABASEWIDGET_H
 
 #include <QFileSystemWatcher>
-#include <QScopedPointer>
 #include <QStackedWidget>
-#include <QTimer>
 
 #include "DatabaseOpenDialog.h"
 #include "config-keepassx.h"
@@ -74,7 +72,7 @@ public:
 
     explicit DatabaseWidget(QSharedPointer<Database> db, QWidget* parent = nullptr);
     explicit DatabaseWidget(const QString& filePath, QWidget* parent = nullptr);
-    ~DatabaseWidget();
+    ~DatabaseWidget() override;
 
     void setFocus(Qt::FocusReason reason);
 
@@ -255,7 +253,6 @@ private:
     void setClipboardTextAndMinimize(const QString& text);
     void processAutoOpen();
     void openDatabaseFromEntry(const Entry* entry, bool inBackground = true);
-    bool confirmDeleteEntries(QList<Entry*> entries, bool permanent);
     void performIconDownloads(const QList<Entry*>& entries, bool force = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
 
@@ -290,7 +287,7 @@ private:
     int m_saveAttempts;
 
     // Search state
-    EntrySearcher* m_EntrySearcher;
+    QScopedPointer<EntrySearcher> m_entrySearcher;
     QString m_lastSearchText;
     bool m_searchLimitGroup;
 
