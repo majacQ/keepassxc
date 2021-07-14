@@ -19,9 +19,6 @@
 #define KEEPASSXC_REPORTSWIDGETHEALTHCHECK_H
 
 #include "gui/entry/EntryModel.h"
-#include <QHash>
-#include <QIcon>
-#include <QPair>
 #include <QWidget>
 
 class Database;
@@ -56,11 +53,15 @@ public slots:
     void calculateHealth();
     void emitEntryActivated(const QModelIndex& index);
     void customMenuRequested(QPoint);
+  <<<<<<< feature/delete-entry-from-reports
     void editFromContextmenu();
     void deleteEntry();
+  =======
+    void deleteSelectedEntries();
+  >>>>>>> develop
 
 private:
-    void addHealthRow(QSharedPointer<PasswordHealth>, const Group*, const Entry*, bool knownBad);
+    void addHealthRow(QSharedPointer<PasswordHealth>, Group*, Entry*, bool knownBad);
 
     QScopedPointer<Ui::ReportsWidgetHealthcheck> m_ui;
 
@@ -68,8 +69,7 @@ private:
     QScopedPointer<QStandardItemModel> m_referencesModel;
     QScopedPointer<QSortFilterProxyModel> m_modelProxy;
     QSharedPointer<Database> m_db;
-    QList<QPair<const Group*, const Entry*>> m_rowToEntry;
-    Entry* m_contextmenuEntry = nullptr;
+    QList<QPair<Group*, Entry*>> m_rowToEntry;
 };
 
 #endif // KEEPASSXC_REPORTSWIDGETHEALTHCHECK_H

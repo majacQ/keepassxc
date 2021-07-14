@@ -17,19 +17,10 @@
  */
 
 #include "TestGui.h"
-#include "TestGlobal.h"
 #include "gui/Application.h"
 
-#include <QAction>
-#include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
-#include <QComboBox>
-#include <QDebug>
-#include <QDialogButtonBox>
-#include <QLabel>
-#include <QLineEdit>
-#include <QListWidgetItem>
 #include <QMimeData>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -37,27 +28,15 @@
 #include <QSignalSpy>
 #include <QSpinBox>
 #include <QTest>
-#include <QTimer>
 #include <QToolBar>
-#include <QToolButton>
-#include <QTreeWidgetItem>
 
 #include "config-keepassx-tests.h"
-#include "core/Config.h"
-#include "core/Database.h"
-#include "core/Entry.h"
-#include "core/Group.h"
-#include "core/Metadata.h"
-#include "core/PasswordHealth.h"
 #include "core/Tools.h"
 #include "crypto/Crypto.h"
-#include "crypto/kdf/AesKdf.h"
-#include "format/KeePass2Reader.h"
 #include "gui/ApplicationSettingsWidget.h"
 #include "gui/CategoryListWidget.h"
 #include "gui/CloneDialog.h"
 #include "gui/DatabaseTabWidget.h"
-#include "gui/DatabaseWidget.h"
 #include "gui/EntryPreviewWidget.h"
 #include "gui/FileDialog.h"
 #include "gui/MessageBox.h"
@@ -66,7 +45,6 @@
 #include "gui/SearchWidget.h"
 #include "gui/TotpDialog.h"
 #include "gui/TotpSetupDialog.h"
-#include "gui/databasekey/KeyComponentWidget.h"
 #include "gui/databasekey/KeyFileEditWidget.h"
 #include "gui/databasekey/PasswordEditWidget.h"
 #include "gui/dbsettings/DatabaseSettingsDialog.h"
@@ -77,7 +55,6 @@
 #include "gui/group/GroupView.h"
 #include "gui/wizard/NewDatabaseWizard.h"
 #include "keys/FileKey.h"
-#include "keys/PasswordKey.h"
 
 #define TEST_MODAL_NO_WAIT(TEST_CODE)                                                                                  \
     bool dialogFinished = false;                                                                                       \
@@ -851,7 +828,7 @@ void TestGui::testTotp()
 void TestGui::testSearch()
 {
     // Add canned entries for consistent testing
-    Q_UNUSED(addCannedEntries());
+    addCannedEntries();
 
     auto* toolBar = m_mainWindow->findChild<QToolBar*>("toolBar");
 
@@ -1005,7 +982,7 @@ void TestGui::testSearch()
 void TestGui::testDeleteEntry()
 {
     // Add canned entries for consistent testing
-    Q_UNUSED(addCannedEntries());
+    addCannedEntries();
 
     auto* groupView = m_dbWidget->findChild<GroupView*>("groupView");
     auto* entryView = m_dbWidget->findChild<EntryView*>("entryView");
@@ -1685,10 +1662,8 @@ void TestGui::testAutoType()
     entryView->selectionModel()->clearSelection();
 }
 
-int TestGui::addCannedEntries()
+void TestGui::addCannedEntries()
 {
-    int entries_added = 0;
-
     // Find buttons
     auto* toolBar = m_mainWindow->findChild<QToolBar*>("toolBar");
     QWidget* entryNewWidget = toolBar->widgetForAction(m_mainWindow->findChild<QAction*>("actionEntryNew"));
@@ -1701,22 +1676,17 @@ int TestGui::addCannedEntries()
     QTest::keyClicks(titleEdit, "test");
     auto* editEntryWidgetButtonBox = editEntryWidget->findChild<QDialogButtonBox*>("buttonBox");
     QTest::mouseClick(editEntryWidgetButtonBox->button(QDialogButtonBox::Ok), Qt::LeftButton);
-    ++entries_added;
 
     // Add entry "something 2"
     QTest::mouseClick(entryNewWidget, Qt::LeftButton);
     QTest::keyClicks(titleEdit, "something 2");
     QTest::keyClicks(passwordEdit, "something 2");
     QTest::mouseClick(editEntryWidgetButtonBox->button(QDialogButtonBox::Ok), Qt::LeftButton);
-    ++entries_added;
 
     // Add entry "something 3"
     QTest::mouseClick(entryNewWidget, Qt::LeftButton);
     QTest::keyClicks(titleEdit, "something 3");
     QTest::mouseClick(editEntryWidgetButtonBox->button(QDialogButtonBox::Ok), Qt::LeftButton);
-    ++entries_added;
-
-    return entries_added;
 }
 
 void TestGui::checkDatabase(QString dbFileName)

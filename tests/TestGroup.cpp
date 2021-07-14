@@ -17,12 +17,13 @@
  */
 
 #include "TestGroup.h"
-#include "TestGlobal.h"
 #include "mock/MockClock.h"
 
-#include <QScopedPointer>
+#include <QSet>
 #include <QSignalSpy>
+#include <QtTestGui>
 
+#include "core/Group.h"
 #include "core/Metadata.h"
 #include "crypto/Crypto.h"
 
@@ -841,7 +842,7 @@ void TestGroup::testCopyDataFrom()
     group3->setName("TestGroup3");
     group3->customData()->set("testKey", "value");
 
-    QSignalSpy spyGroupModified(group.data(), SIGNAL(groupModified()));
+    QSignalSpy spyGroupModified(group.data(), SIGNAL(modified()));
     QSignalSpy spyGroupDataChanged(group.data(), SIGNAL(groupDataChanged(Group*)));
 
     group->copyDataFrom(group2.data());

@@ -20,28 +20,19 @@
 #include "Tools.h"
 
 #include "config-keepassx.h"
-#include "core/Config.h"
-#include "core/Translator.h"
-
 #include "git-info.h"
-#include <QCoreApplication>
+
 #include <QElapsedTimer>
-#include <QIODevice>
 #include <QImageReader>
 #include <QLocale>
+#include <QMetaProperty>
 #include <QRegularExpression>
 #include <QStringList>
-#include <QSysInfo>
 #include <QUrl>
 #include <QUuid>
-#include <cctype>
 
 #ifdef Q_OS_WIN
 #include <windows.h> // for Sleep()
-#endif
-
-#ifdef Q_OS_UNIX
-#include <time.h> // for nanosleep()
 #endif
 
 namespace Tools
@@ -351,5 +342,24 @@ namespace Tools
         } while (match.hasMatch());
 
         return subbed;
+    }
+
+    QVariantMap qo2qvm(const QObject* object, const QStringList& ignoredProperties)
+    {
+        QVariantMap result;
+        const QMetaObject* metaobject = object->metaObject();
+        int count = metaobject->propertyCount();
+        for (int i = 0; i < count; ++i) {
+            QMetaProperty metaproperty = metaobject->property(i);
+            const char* name = metaproperty.name();
+
+            if (ignoredProperties.contains(QLatin1String(name)) || (!metaproperty.isReadable())) {
+                continue;
+            }
+
+            QVariant value = object->property(name);
+            result[QLatin1String(name)] = value;
+        }
+        return result;
     }
 } // namespace Tools

@@ -20,11 +20,7 @@
 #define KEEPASSX_ENTRY_H
 
 #include <QImage>
-#include <QMap>
-#include <QPixmap>
 #include <QPointer>
-#include <QSet>
-#include <QUrl>
 #include <QUuid>
 
 #include "core/AutoTypeAssociations.h"
@@ -75,7 +71,7 @@ struct EntryData
     bool equals(const EntryData& other, CompareItemOptions options) const;
 };
 
-class Entry : public QObject
+class Entry : public ModifiableObject
 {
     Q_OBJECT
 
@@ -260,7 +256,6 @@ signals:
      * Emitted when a default attribute has been changed.
      */
     void entryDataChanged(Entry* entry);
-    void entryModified();
 
 private slots:
     void emitDataChanged();
