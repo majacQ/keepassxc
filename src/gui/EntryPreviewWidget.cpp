@@ -278,6 +278,17 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
 {
     Q_ASSERT(m_currentEntry);
     m_ui->entryAttributesTable->clear();
+  <<<<<<< feature/toggle-view-attributes
+    m_ui->entryAttributesTable->horizontalHeader()->hide();
+    m_ui->entryAttributesTable->verticalHeader()->hide();
+    m_ui->entryAttributesTable->setShowGrid(false);
+    m_ui->entryAttributesTable->setStyleSheet("QTableView::item {padding: 5px;}");
+    m_ui->entryAttributesTable->setFrameStyle(QFrame::NoFrame);
+    m_ui->entryAttributesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_ui->entryAttributesTable->setFocusPolicy(Qt::NoFocus);
+    m_ui->entryAttributesTable->setSelectionMode(QAbstractItemView::NoSelection);
+  =======
+  >>>>>>> develop
 
     const EntryAttributes* attributes = m_currentEntry->attributes();
     const QStringList customAttributes = attributes->customKeys();
@@ -292,14 +303,37 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         QFont font;
         font.setBold(true);
         for (const QString& key : customAttributes) {
+  <<<<<<< feature/toggle-view-attributes
+            auto value = attributes->value(key);
+            m_ui->entryAttributesTable->setItem(i, 0, new QTableWidgetItem(key));
+            m_ui->entryAttributesTable->item(i, 0)->setFont(font);
+  =======
             m_ui->entryAttributesTable->setItem(i, 0, new QTableWidgetItem(key));
 
+  >>>>>>> develop
             if (attributes->isProtected(key)) {
                 // only show the reveal button on protected attributes
                 auto button = new QToolButton();
                 button->setCheckable(true);
                 button->setChecked(false);
                 button->setIcon(icons()->onOffIcon("password-show", false));
+  <<<<<<< feature/toggle-view-attributes
+                m_ui->entryAttributesTable->setCellWidget(i, 1, button);
+                connect(button, &QToolButton::clicked, [this, i, value](bool state) {
+                    if (state) {
+                        m_ui->entryAttributesTable->item(i, 2)->setText(value);
+                    } else {
+                        m_ui->entryAttributesTable->item(i, 2)->setText(QString("\u25cf").repeated(6));
+                    }
+                    auto button = qobject_cast<QToolButton*>(m_ui->entryAttributesTable->cellWidget(i, 1));
+                    button->setIcon(icons()->onOffIcon("password-show", state));
+                });
+                m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(QString("\u25cf").repeated(6)));
+            } else {
+                m_ui->entryAttributesTable->setItem(i, 2, new QTableWidgetItem(value));
+            }
+            i += 1;
+  =======
                 button->setProperty("value", attributes->value(key));
                 button->setProperty("row", i);
                 m_ui->entryAttributesTable->setCellWidget(i, 1, button);
@@ -328,6 +362,7 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
             m_ui->entryAttributesTable->item(i, 2)->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
 
             ++i;
+  >>>>>>> develop
         }
         connect(m_ui->entryAttributesTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
             if (column == 2) {
@@ -336,8 +371,14 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
         });
     }
 
+  <<<<<<< feature/toggle-view-attributes
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_ui->entryAttributesTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+  =======
     m_ui->entryAttributesTable->horizontalHeader()->setStretchLastSection(true);
     m_ui->entryAttributesTable->resizeColumnsToContents();
+  >>>>>>> develop
     m_ui->entryAttributesTable->resizeRowsToContents();
     m_ui->entryAttachmentsWidget->setEntryAttachments(m_currentEntry->attachments());
 }
